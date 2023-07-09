@@ -2,42 +2,26 @@ import React, { useEffect, useState } from 'react';
 
 import Tasks from './components/Tasks/Tasks';
 import NewTask from './components/NewTask/NewTask';
+import useDataTransfer from './hooks/data-transfer';
 
 function App() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [tasks, setTasks] = useState([]);
 
-  const fetchTasks = async (taskText) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        'https://custom-hooks-79390-default-rtdb.firebaseio.com/tasks.json'
-      );
+  const { isLoading, error, sendRequest: fetchTasks } = useDataTransfer();
 
-      if (!response.ok) {
-        throw new Error('Request failed!');
-      }
-
-      const data = await response.json();
-
+  useEffect(() => {
+    const transformedData = (transObj) => {
       const loadedTasks = [];
 
-      for (const taskKey in data) {
-        loadedTasks.push({ id: taskKey, text: data[taskKey].text });
+      for (const taskKey in transObj) {
+        loadedTasks.push({ id: taskKey, text: transObj[taskKey].text });
       }
 
       setTasks(loadedTasks);
-    } catch (err) {
-      setError(err.message || 'Something went wrong!');
     }
-    setIsLoading(false);
-  };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+    fetchTasks({ url: 'https://custom-hooks-79390-default-rtdb.firebaseio.com/tasks.json' }, transformedData);
+  }, [fetchTasks]);
 
   const taskAddHandler = (task) => {
     setTasks((prevTasks) => prevTasks.concat(task));
